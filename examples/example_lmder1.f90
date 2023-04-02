@@ -13,11 +13,29 @@ integer :: info
 real(wp) :: tol, x(n), fvec(m), fjac(m,n)
 integer :: ipvt(n)
 real(wp) :: wa(lwa)
+integer :: iflag, i
+real(wp) :: xp(n), fvecp(m), err(m)
 
 ! The following starting values provide a rough fit.
 x = [1.0_wp, 1.0_wp, 1.0_wp]
 
-call check_deriv()
+call chkder(m, n, x, fvec, fjac, m, xp, fvecp, 1, err)
+iflag = 1
+call fcn(m, n, x, fvec, fjac, m, iflag)
+iflag = 2
+call fcn(m, n, x, fvec, fjac, m, iflag)
+iflag = 1
+call fcn(m, n, xp, fvecp, fjac, m, iflag)
+call chkder(m, n, x, fvec, fjac, m, xp, fvecp, 2, err)
+
+write(nwrite, '(a)') 'Derivatives check (1.0 is correct, 0.0 is incorrect):'
+write(nwrite,'(1p,(5x,3d15.7))') err
+do i = 1, size(err)
+    if (abs(err(i)-1.0_wp) > epsilon(1.0_wp)) then
+        error stop 'Derivative check failed'
+    end if
+end do
+
 
 ! Set tol to the square root of the machine precision. Unless high precision
 ! solutions are required, this is the recommended setting.
